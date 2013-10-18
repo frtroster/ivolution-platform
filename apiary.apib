@@ -1,0 +1,149 @@
+HOST: http://content.orm-designer.com/v1/
+
+--- Ivolution Content Management ---
+
+---
+ICM is based on a REST API without frontend interface. It consists of:
+
+- CoreBundle
+- ContentBundle
+- MediaBundle
+
+
+    POST   :   To create or update resource 
+    GET    :   Get a resource or list of resources
+    DELETE :   To delete resource
+Description Of Usual Server Responses:
+
+- 200 `OK` - the request was successful (some API calls may return 201 instead).
+- 201 `Created` - the request was successful and a resource was created.
+- 204 `No Content` - the request was successful but there is no representation to return (i.e. the response is empty).
+- 400 `Bad Request` - the request could not be understood or was missing required parameters.
+- 401 `Unauthorized` - authentication failed or user doesn't have permissions for requested operation.
+- 403 `Forbidden` - access denied.
+- 404 `Not Found` - resource was not found.
+- 405 `Method Not Allowed` - requested method is not supported for resource.
+
+In case the response is not 2xx more detailed error description is returned as part of the response JSON:
+
+
+    { "status": "failed", "message": "Unable to create node because of failed database connection" }
+---
+
+--
+Observers
+Observers are used as hooks to connect to remote URI when an event is triggered. 
+Once an event is triggered for a specific account the url will be called among 
+with JSON body content with related event information.
+--
+Add a new Observer
+POST /observer/add
+> Content-Type: application/json
+{ "event":"add_content", "url": "http://www.orm-designer.com/flush-content-cache?node=$SLUG$" }
+< 201
+< Content-Type: application/json
+{ "status": "ok", "id": 1 }
+
+List of all Observers
+GET /observer/list
+< 200
+< Content-Type: application/json
+{ "items": [
+{ "id": 1, "event": "add_content", "url": "http://www.orm-designer.com/flush-content-cache" }
+] }
+
+List all observers for an event
+GET /observer/list/{event}
+< 200
+< Content-Type: application/json
+{ 
+    "status": "ok",
+    "items": [
+        { 
+            "id": 1, 
+            "event": "add_content", 
+            "url": "http://www.orm-designer.com/flush-content-cache" 
+        }
+    ] 
+}
+
+Delete an Observer
+DELETE /observer/delete/{id}
+< 200
+< Content-Type: application/json
+{ "status": "ok" }
+
+
+
+-- 
+Nodes 
+Nodes are content holders with a specific hierarchical structure.
+--
+Add a new node as a root of the tree in case the tree is empty 
+or as a last child of tree root in case the tree is non-empty.
+There is no limit to the number and keys for the attributes,
+these can be anything valueable for node processing.
+POST /node/add
+> Content-Type: application/json
+{ "name": "Homepage", "slug": "homepage", "param1": "value1", "param2": "value2" }
+< 200
+< Content-Type: application/json
+{ "status": "ok", "id": 1 }
+
+Add a node to a specified position in the tree (As a last child of `homepage`)
+`position` attributes:
+
+- last-child-of
+- first-child-of
+- after
+- before
+
+`id` is id of the node.
+
+POST /node/add/{position}/{id}
+> Content-Type: application/json
+{ "name": "About us", "slug": "about-us", "param1": "value1" }
+< 200
+< Content-Type: application/json
+{ "status": "ok", "id": 2 }
+
+List all nodes in the tree
+GET /node/list
+< 200
+< Content-Type: application/json
+{ 
+    "status": "ok",
+    "items": [
+        { 
+            "id": 1, 
+            "name": "Homepage", 
+            "slug": "homepage",
+            "param1": "value1", 
+            "param2": "value2",
+            "items": [
+                { 
+                    "id": 2, 
+                    "name": "About us", 
+                    "slug": "about-us",
+                    "param1": "value1"
+                }    
+            ]
+        }
+    ] 
+}
+
+List all nodes in the sub-tree
+GET /node/list/{id}
+< 200
+< Content-Type: application/json
+{ 
+    "status": "ok",
+    "items": [
+        { 
+            "id": 2, 
+            "name": "About us", 
+            "slug": "about-us",
+            "param1": "value1"
+        } 
+    ] 
+}
